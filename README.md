@@ -1,4 +1,4 @@
-# NIBSS Banking Backend (Express)
+# Syncord Banking System
 
 A Node.js + Express + MongoDB backend for **customer onboarding**,
 **account management**, and **core banking operations**, built to
