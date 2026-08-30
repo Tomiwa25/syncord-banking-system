@@ -1,0 +1,4 @@
+node_modules/
+.env
+npm-debug.;og
+.DB_Store
