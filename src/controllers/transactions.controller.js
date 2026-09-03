@@ -1,28 +1,55 @@
 const transactionsService = require('../services/transactions.service');
 
-async function nameEnquiry(req, res) {
-  const result = await transactionsService.nameEnquiry(req.body);
-  res.json({ success: true, data: result });
-}
+exports.deposit = async (req, res, next) => {
+  try {
+    const transaction = await transactionsService.deposit(req.body);
+    res.status(201).json({
+      success: true,
+      message: "Deposit successful",
+      data: transaction,
+    })
+  } catch(error) {
+    next(error)
+  }
+};
 
-async function transfer(req, res) {
+exports.withdraw = async (req, res, next) => {
+  try {
+  const transaction = await transactionsService.withdraw(req.body);
+    res.status(201).json({
+      success: true,
+      message: "Withdraw successful",
+      data: transaction,
+    }) 
+  } catch (error) {
+    next(error)
+  }
+};
+
+exports.transfer = async (req, res, next) => {
+  try {
   const transaction = await transactionsService.transfer(req.body);
-  res.status(201).json({ success: true, data: transaction });
-}
+    res.status(201).json({
+      success: true,
+      message: "Transfer successful",
+      data: transaction,
+    }) 
+  } catch (error) {
+    next(error)
+  }
+};
 
-async function reconcile(req, res) {
-  const transaction = await transactionsService.reconcile(req.params.reference);
-  res.json({ success: true, data: transaction });
-}
+exports.getTransactions = async (req, res, next) => {
+  try {
+  const transactions = await transactionsService.getTransactions(req.query);
+    res.status(201).json({
+      success: true,
+      message: "Transaction details retrieved",
+      data: transactions,
+    }) 
+  } catch (error) {
+    next(error)
+  }
+};
 
-async function findByAccount(req, res) {
-  const transactions = await transactionsService.findByAccount(req.params.accountNumber);
-  res.json({ success: true, data: transactions });
-}
 
-async function findOne(req, res) {
-  const transaction = await transactionsService.findByReference(req.params.reference);
-  res.json({ success: true, data: transaction });
-}
-
-module.exports = { nameEnquiry, transfer, reconcile, findByAccount, findOne };

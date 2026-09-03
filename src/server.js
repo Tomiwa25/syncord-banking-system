@@ -1,18 +1,20 @@
 const app = require('./app');
-const config = require('./config');
-const connectDb = require('./config/db');
-const logger = require('./utils/logger');
+const env = require('./config/env');
+const connectDatabase = require('./config/database');
 
-async function start() {
+const startServer = async () => {
   try {
-    await connectDb();
-    app.listen(config.port, () => {
-      logger.info(`Server running on /api/v1`);
+    await connectDatabase();
+    app.listen(env.PORT, () => {
+      console.log(`Server is running on port ${env.PORT}`);
     });
-  } catch (err) {
-    logger.error('Failed to start server', { error: err.message });
+    console.log(`Environment: ${env.NODE_ENV}`);
+  } catch (error) {
+    console.error('Failure starting the server:', error.message);
+
     process.exit(1);
   }
-}
+};
 
-start();
+startServer();
+

@@ -1,16 +1,16 @@
 const express = require('express');
-const controller = require('../controllers/accounts.controller');
-const validate = require('../middleware/validate');
-const requireAuth = require('../middleware/auth');
-const { createAccountSchema } = require('../validation/accounts.validation');
+const  { createAccount, getAccountById, getCustomerAccounts, getBalance, nameEnquiry, getAllAccounts } = require('../controllers/accounts.controller');
+const authenticate = require("../middleware/auth.middleware");
 
 const router = express.Router();
 
-router.use(requireAuth);
+router.post('/', authenticate, createAccount);
+router.get('/', authenticate, getAllAccounts)
+router.get('/:accountNumber', authenticate, getAccountById);
+router.get('/customer/:customerId', authenticate, getCustomerAccounts);
+router.get('/:accountNumber/balance', authenticate, getBalance);
+router.get('/:accountNumber/name-enquiry', authenticate, nameEnquiry);
 
-router.post('/', validate(createAccountSchema), controller.open);
-router.get('/customer/:customerId', controller.findByCustomer);
-router.get('/:accountNumber', controller.findOne);
-router.get('/:accountNumber/balance', controller.syncBalance);
+
 
 module.exports = router;

@@ -1,97 +1,124 @@
-const { v4: uuidv4 } = require('uuid');
-const { Transaction, TRANSACTION_STATUS } = require('../models/transaction.model');
-const accountsService = require('./accounts.service');
-const nibssPhoenixClient = require('../integrations/nibss-phoenix/nibssPhoenixClient');
-const ApiError = require('../utils/ApiError');
+const Transaction = require('../models/transaction.model');
+const Account = require('../models/account.model');
 
-async function nameEnquiry({ accountNumber, bankCode }) {
-  return nibssPhoenixClient.nameEnquiry(accountNumber, bankCode);
+const generateReferenceNumber = () => {
+  return `TXN-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+};
+
+exports.deposit = async ({
+  accountNumber,
+  amount,
+  narration,
+}) => {
+ if (amount <= 0) {
+    throw new Error('Amount must be greater than zero');
 }
 
-/**
- * Core banking money-movement flow:
- *  1. Confirm the source account exists locally.
- *  2. Generate an idempotent reference and persist a PENDING record
- *     *before* calling NIBSS, so a crash mid-call is still recoverable
- *     via reconciliation against transactionStatusQuery.
- *  3. Call NIBSS to actually move funds.
- *  4. Update the local record with the outcome.
- */
-async function transfer(dto) {
-  const sourceAccount = await accountsService.findByAccountNumber(
-    dto.sourceAccountNumber,
-  );
-
-  const reference = uuidv4();
-
-  const transaction = await Transaction.create({
-    sourceAccountId: sourceAccount._id,
-    sourceAccountNumber: dto.sourceAccountNumber,
-    destinationAccountNumber: dto.destinationAccountNumber,
-    destinationBankCode: dto.destinationBankCode,
-    amount: dto.amount,
-    narration: dto.narration,
-    reference,
-    status: TRANSACTION_STATUS.PENDING,
-  });
-
-  try {
-    const result = await nibssPhoenixClient.fundTransfer({
-      sourceAccountNumber: dto.sourceAccountNumber,
-      destinationAccountNumber: dto.destinationAccountNumber,
-      destinationBankCode: dto.destinationBankCode,
-      amount: dto.amount,
-      narration: dto.narration,
-      reference,
-    });
-
-    transaction.status =
-      result.status === 'SUCCESSFUL'
-        ? TRANSACTION_STATUS.SUCCESSFUL
-        : result.status === 'FAILED'
-          ? TRANSACTION_STATUS.FAILED
-          : TRANSACTION_STATUS.PENDING;
-    transaction.nibssSessionId = result.sessionId;
-    if (result.status === 'FAILED') {
-      transaction.failureReason = result.message;
-    }
-  } catch (err) {
-    transaction.status = TRANSACTION_STATUS.FAILED;
-    transaction.failureReason = err.message || 'Unknown error';
-  }
-
-  await transaction.save();
-  return transaction;
+  const account = await Account.findOne({
+    accountNumber,
+  })
+  if (!account) {
+    throw new Error('Account is not found');
 }
 
-/** Reconciles a PENDING local transaction against NIBSS's own status. */
-async function reconcile(reference) {
-  const transaction = await Transaction.findOne({ reference });
-  if (!transaction) throw new ApiError(404, 'Transaction not found');
-
-  const statusResult = await nibssPhoenixClient.transactionStatusQuery(reference);
-
-  if (statusResult.status === 'SUCCESSFUL') {
-    transaction.status = TRANSACTION_STATUS.SUCCESSFUL;
-  } else if (statusResult.status === 'FAILED') {
-    transaction.status = TRANSACTION_STATUS.FAILED;
-    transaction.failureReason = statusResult.message;
-  }
-
-  await transaction.save();
-  return transaction;
+  if (account.status !== "ACTIVE") {
+    throw new Error('Account is not active');
 }
 
-async function findByAccount(accountNumber) {
-  return Transaction.find({ sourceAccountNumber: accountNumber }).sort({
-    createdAt: -1,
-  });
+ account.balance += amount;
+
+ await account.save();
+
+ return Transaction.create({
+  reference: generateReferenceNumber(),
+  type: "DEPOSIT",
+  destinationAccount: accountNumber,
+  amount,
+  narration,
+  status: "SUCCESS"
+});
+};
+
+exports.withdraw = async ({
+  accountNumber,
+  amount,
+  narration,
+}) => {
+ if (amount <= 0) {
+    throw new Error('Amount must be greater than zero');
+ }
+
+ const account = await Account.findOne({
+    accountNumber,
+ })
+ if (!account) {
+    throw new Error('Account is not found');
 }
 
-async function findByReference(reference) {
-  const transaction = await Transaction.findOne({ reference });
-  if (!transaction) throw new ApiError(404, 'Transaction not found');
-  return transaction;
+  if (account.status !== "ACTIVE") {
+    throw new Error('Account is not active');
 }
 
-module.exports = { nameEnquiry, transfer, reconcile, findByAccount, findByReference };
+if (account.balance < amount) {
+  throw new Error("Insufficient balance")
+}
+ account.balance -= amount;
+
+ await account.save();
+
+ return Transaction.create({
+  reference: generateReferenceNumber(),
+  type: "WITHDRAWAL",
+  destinationAccount: accountNumber,
+  amount,
+  narration,
+  status: "SUCCESS"
+});
+};
+
+exports.transfer = async ({
+  sourceAccount,
+  destinationAccount,
+  amount,
+  narration,
+}) => {
+ if (amount <= 0) {
+    throw new Error('Amount must be greater than zero');
+ }
+ const source = await Account.findOne({
+    accountNumber: sourceAccount,
+ });
+
+ const destination = await Account.findOne({
+    accountNumber: destinationAccount,
+ });
+
+ if (!source || !destination) {
+    throw new Error('Account is not found');
+} 
+  if (source.status !== "ACTIVE" || destination.status !== "ACTIVE") {
+    throw new Error('Account is not active');
+}
+  if (source.balance < amount) {
+  throw new Error("Insufficient balance")
+}
+  source.balance -= amount;
+  destination.balance += amount;
+
+ await source.save();
+ await destination.save();
+
+ return Transaction.create({
+  reference: generateReferenceNumber(),
+  type: "TRANSFER",
+  sourceAccount,
+  destinationAccount,
+  amount,
+  narration,
+  status: "SUCCESS"
+ });
+};
+
+exports.getTransactions = async (filters) => {
+  return Transaction.find(filters).sort({ createdAt: -1 });
+};

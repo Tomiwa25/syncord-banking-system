@@ -1,64 +1,100 @@
-const { Account, ACCOUNT_STATUS } = require('../models/account.model');
-const customersService = require('./customers.service');
-const nibssPhoenixClient = require('../integrations/nibss-phoenix/nibssPhoenixClient');
-const ApiError = require('../utils/ApiError');
+const Account = require("../models/Account");
+const Customer = require("../models/Customer");
+const nibssIdentityApi = require("../integrations/nibss/identity.api");
+const nibssAccountApi = require("../integrations/nibss/account.api");
 
-/**
- * Opens a real account via NibssByPhoenix for an already-KYC-verified
- * customer, then mirrors the result locally.
- */
-async function openAccount({ customerId }) {
-  const customer = await customersService.findById(customerId);
+const createAccount = async ({customerId, kycType }) => {
+  const customer = await Customer.findById(customerId);
+  if (!customer) {
+    throw new Error("Customer not found");
+  }
+ let kycID;
+ let dob;
 
-  const nibssAccount = await nibssPhoenixClient.createCustomerAccount({
-    bvn: customer.bvn,
-    firstName: customer.firstName,
-    lastName: customer.lastName,
-    middleName: customer.middleName,
-    phoneNumber: customer.phoneNumber,
-    email: customer.email,
-    dateOfBirth: customer.dateOfBirth,
-    address: customer.address,
-    gender: customer.gender,
-  });
+ if (kycType.toLowercase() === "bvn") {
+  kycID = customer.bvn;
+ } else if (kycType.toLowercase() === "nin") {
+  kycID = customer.nin;
+ } else {
+  throw new Error("Invalid Credentials");
+ }
+   
+ if (!kycID) {
+  throw new Error(`${kycType.toUpperCase()} not found for the customer`);
+ }
+  //Validate identity first 
+ let identity;
 
-  const account = await Account.create({
-    customerId: customer._id,
-    accountNumber: nibssAccount.accountNumber,
-    accountName: nibssAccount.accountName,
-    bankCode: nibssAccount.bankCode,
-    status:
-      nibssAccount.status === 'ACTIVE'
-        ? ACCOUNT_STATUS.ACTIVE
-        : ACCOUNT_STATUS.PENDING,
-  });
+ if (kycType.toLowercase() === "bvn") {
+  identity = await nibssIdentityApi.validateBvn(
+    kycID
+  );
+ } else {
+  identity = await nibssIdentityApi.validateNin(
+    kycID
+  );
+ }
 
-  await customersService.markOnboarded(customer._id.toString());
+ if (!identity.valid) {
+  throw new Error(
+    `${kycType.toUpperCase()} validation failed`
+  );
+ }
 
+dob = customer.dateOfBirth
+ .toISOString()
+ .split("T")[0];
+
+ const result = await nibssAccountApi.createAccount({
+  kycType: kycType.toLowercase(),
+  kycID,
+  dob
+ });
+
+ const account = await Account.create({
+  customer: customer.id,
+  accountNumber: result.accountNumber,
+  bankCode: result.bankCode,
+  bankName: result.bankName,
+  balance: result.balance,
+  status: "ACTIVE",
+ });
   return account;
-}
+};
 
-async function findByCustomer(customerId) {
-  return Account.find({ customerId });
-}
-
-async function findByAccountNumber(accountNumber) {
-  const account = await Account.findOne({ accountNumber });
-  if (!account) throw new ApiError(404, 'Account not found');
+const getAccountById = async (accountNumber) => {
+  const account = await Account.findOne({ accountNumber }).populate("customer");
+  if (!account) {
+    throw new Error("Account not found");
+  }
   return account;
+};
+
+const getCustomerAccounts = async (customerId) => {
+  const accounts = await Account.find({ customer: customerId });
+  if (!accounts || accounts.length === 0) {
+    throw new Error("No accounts found for this customer");
+  }
+  return accounts;
+};
+
+const getBalance = async (accountNumber) => {
+  return nibssAccountApi.getBalance(accountNumber);
+};
+
+const nameEnquiry = async => {
+  return nibssAccountApi.nameEnquiry(accountNumber);
+};
+
+const getAllAccounts = async => {
+  return nibssAccountApi.getAllAccounts();
 }
 
-/** Pulls a fresh balance from NIBSS and refreshes the local cache. */
-async function syncBalance(accountNumber) {
-  const account = await findByAccountNumber(accountNumber);
-  const balance = await nibssPhoenixClient.balanceEnquiry(accountNumber);
-
-  account.cachedAvailableBalance = balance.availableBalance;
-  account.cachedLedgerBalance = balance.ledgerBalance;
-  account.lastBalanceSyncAt = new Date();
-  await account.save();
-
-  return account;
+module.exports = {
+  createAccount,
+  getAccountById,
+  getCustomerAccounts,
+  getBalance,
+  nameEnquiry,
+  getAllAccounts
 }
-
-module.exports = { openAccount, findByCustomer, findByAccountNumber, syncBalance };

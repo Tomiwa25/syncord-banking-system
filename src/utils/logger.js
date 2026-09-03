@@ -1,15 +1,21 @@
-const winston = require('winston');
+const logger = {
+    info: (message) => {
+        console.log(
+            `[INFO] ${ new Date().toISOString() } - ${message}`
+        );
+    },
 
-const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message, ...meta }) => {
-      const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : '';
-      return `${timestamp} [${level.toUpperCase()}] ${message} ${metaStr}`;
-    }),
-  ),
-  transports: [new winston.transports.Console()],
-});
+    error: (message) => {
+        console.error(
+            `[ERROR] ${ new Date().toISOString() } - ${message}`
+        );
+    },
+
+    warn: (message) => {
+        console.warn(
+            `[WARN] ${ new Date().toISOString() } - ${message}`
+        );
+    },
+};
 
 module.exports = logger;

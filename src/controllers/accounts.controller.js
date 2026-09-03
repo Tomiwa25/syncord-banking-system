@@ -1,23 +1,57 @@
 const accountsService = require('../services/accounts.service');
 
-async function open(req, res) {
-  const account = await accountsService.openAccount(req.body);
-  res.status(201).json({ success: true, data: account });
-}
+exports.createAccount = async (req, res, next) => {
+  try {
+    const account = await accountsService.createAccount(req.body);
+    res.status(201).json({ success: true,  message: "Account created successfully", data: account });
+  } catch (error) {
+    next(error)
+  }
+};
 
-async function findByCustomer(req, res) {
-  const accounts = await accountsService.findByCustomer(req.params.customerId);
-  res.json({ success: true, data: accounts });
-}
+exports.getAccountById = async (req, res, next) => {
+  try {
+    const account = await accountsService.getAccountById(req.params.accountNumber);
+    res.status(201).json({ success: true,  message: "Account retrieved", data: account });
+  } catch (error) {
+    next(error)
+  }
+};
 
-async function findOne(req, res) {
-  const account = await accountsService.findByAccountNumber(req.params.accountNumber);
-  res.json({ success: true, data: account });
-}
+exports.getCustomerAccounts = async (req, res, next) => {
+  try {
+    const accounts = await accountsService.getCustomerAccounts(req.params.customerId);
+    res.status(201).json({ success: true,  message: "Customer details retrieved", data: accounts });
+  } catch (error) {
+    next(error)
+  }
+};
 
-async function syncBalance(req, res) {
-  const account = await accountsService.syncBalance(req.params.accountNumber);
-  res.json({ success: true, data: account });
-}
+exports.getBalance = async (req, res, next) => {
+  try {
+    const balance = await accountsService.getBalance(req.params.accountNumber);
+    res.status(201).json({ success: true,  message: "Customer details retrieved", data: balance });
+  } catch (error) {
+    next(error)
+  }
+};
 
-module.exports = { open, findByCustomer, findOne, syncBalance };
+exports.nameEnquiry = async (req, res, next) => {
+  try {
+    const result = await accountsService.nameEnquiry(req.params.accountNumber);
+    res.status(201).json({ success: true,  message: "Name details retrieved", data: result });
+  } catch (error) {
+    next(error)
+  }
+};
+
+
+exports.getAllAccounts = async (req, res, next) => {
+  try {
+    const accounts = await accountsService.getAllAccounts();
+    res.status(201).json({ success: true,  message: "Customer details retrieved", data: accounts });
+  } catch (error) {
+    next(error)
+  }
+};
+

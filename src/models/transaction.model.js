@@ -7,6 +7,10 @@ const transactionSchema = new mongoose.Schema(
       ref: 'Account',
       required: true,
     },
+    externalTransactionId: {
+      type: String,
+      index: true
+    },
     sourceAccount: { 
       type: String, 
     },
