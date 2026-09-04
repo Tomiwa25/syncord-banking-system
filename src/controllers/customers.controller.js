@@ -2,7 +2,7 @@ const customersService = require('../services/customers.service');
 
 exports.createCustomer = async (req, res, next) => {
   try {
-    const customer = await customersService.createCustomer(req.body);
+    const customer = await customersService.createCustomer(req.body, req.user.userId);
     res.status(201).json({ message: 'Customer created successfully', data: customer });
   } catch (error) {
     next(error);
@@ -11,7 +11,7 @@ exports.createCustomer = async (req, res, next) => {
 
 exports.getCustomerById = async (req, res, next) => {
   try {
-  const customer = await customersService.getCustomerById(req.params.id);
+  const customer = await customersService.getCustomerById(req.params.id, req.user.userId);
   res.status(200).json({message: "Data Retrieved", data: customer})
   } catch (error) {
     next(error)
@@ -29,7 +29,7 @@ exports.getCustomers = async (req, res, next) => {
 
 exports.updateCustomerById = async (req, res, next) => {
   try {
-  const customer = await customersService.updateCustomerById( req.params.id, req.body);
+  const customer = await customersService.updateCustomer(req.params.id, req.body, req.user.userId);
   res.status(200).json({ message: "Customer updated successfully", data: customer})
   } catch (error) {
     next(error)

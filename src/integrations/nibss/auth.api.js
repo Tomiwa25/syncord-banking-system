@@ -7,10 +7,14 @@ const onboardFintech = async (data) => {
 };
 
 const login = async () => {
-    const response = await nibssClient.post("/api/auth/login", {
-        apiKey: env.NIBSS_API_KEY,
-        apiSecret: env.NIBSS_API_SECRET,
+    console.log("NIBSS BASE URL:", env.nibss.baseUrl);
+    console.log("Calling NIBSS login endpoint...")
+    const response = await nibssClient.post("/api/auth/token", {
+        apiKey: env.nibss.apikey,
+        apiSecret: env.nibss.apisecret,
     });
+
+    console.log("NIBSS LOGIN RESPONSE:", response.data)
     return response.data;
 }
 

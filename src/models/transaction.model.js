@@ -11,6 +11,12 @@ const transactionSchema = new mongoose.Schema(
       type: String,
       index: true
     },
+    customerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Customer',
+      required: true,
+      index: true,
+    },
     sourceAccount: { 
       type: String, 
     },

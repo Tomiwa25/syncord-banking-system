@@ -1,5 +1,6 @@
 const express = require("express");
 const authApi = require("../integrations/nibss/auth.api");
+const { authenticate, authorizeRoles } = require("../middleware/auth.middleware");
 const router = express.Router();
 
 router.post("/onboard", async (req, res, next) => {
@@ -19,7 +20,7 @@ router.post("/login", async( req, res, next ) => {
     try {
         const result = await authApi.login();
 
-        res.status(201).json({
+        res.status(200).json({
             success: true,
             data: result,
         });

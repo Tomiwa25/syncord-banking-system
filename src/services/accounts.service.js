@@ -11,9 +11,9 @@ const createAccount = async ({customerId, kycType }) => {
  let kycID;
  let dob;
 
- if (kycType.toLowercase() === "bvn") {
+ if (kycType.toLowerCase() === "bvn") {
   kycID = customer.bvn;
- } else if (kycType.toLowercase() === "nin") {
+ } else if (kycType.toLowerCase() === "nin") {
   kycID = customer.nin;
  } else {
   throw new Error("Invalid Credentials");
@@ -25,7 +25,7 @@ const createAccount = async ({customerId, kycType }) => {
   //Validate identity first 
  let identity;
 
- if (kycType.toLowercase() === "bvn") {
+ if (kycType.toLowerCase() === "bvn") {
   identity = await nibssIdentityApi.validateBvn(
     kycID
   );
@@ -46,14 +46,16 @@ dob = customer.dateOfBirth
  .split("T")[0];
 
  const result = await nibssAccountApi.createAccount({
-  kycType: kycType.toLowercase(),
+  kycType: kycType.toLowerCase(),
   kycID,
   dob
  });
 
  const account = await Account.create({
-  customer: customer.id,
+  customerId: customer._id,
   accountNumber: result.accountNumber,
+  accountType: result.accountType,
+  currency: result.currency,
   bankCode: result.bankCode,
   bankName: result.bankName,
   balance: result.balance,
@@ -63,7 +65,7 @@ dob = customer.dateOfBirth
 };
 
 const getAccountById = async (accountNumber) => {
-  const account = await Account.findOne({ accountNumber }).populate("customer");
+  const account = await Account.findOne({ accountNumber }).populate("customerId");
   if (!account) {
     throw new Error("Account not found");
   }
@@ -71,7 +73,7 @@ const getAccountById = async (accountNumber) => {
 };
 
 const getCustomerAccounts = async (customerId) => {
-  const accounts = await Account.find({ customer: customerId });
+  const accounts = await Account.find({ customerId });
   if (!accounts || accounts.length === 0) {
     throw new Error("No accounts found for this customer");
   }
@@ -86,8 +88,8 @@ const nameEnquiry = async (accountNumber) => {
   return nibssAccountApi.nameEnquiry(accountNumber);
 };
 
-const getAllAccounts = async () => {
-  return nibssAccountApi.getAllAccounts();
+const getAccounts = async () => {
+  return nibssAccountApi.getAccounts();
 };
 
 module.exports = {
@@ -96,5 +98,5 @@ module.exports = {
   getCustomerAccounts,
   getBalance,
   nameEnquiry,
-  getAllAccounts
+  getAccounts
 }

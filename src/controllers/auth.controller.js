@@ -2,8 +2,8 @@ const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 const User = require('../models/user');
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, env.jwt.secret, { expiresIn: "1d" });
+const generateToken = (user) => {
+  return jwt.sign({ userId: user._id, role: user.role }, env.jwt.secret, { expiresIn: "1d" });
 }
 
 exports.register = async (req, res, next) => {
@@ -16,7 +16,7 @@ exports.register = async (req, res, next) => {
     }
 
     const newUser = await User.create({ email, password });
-    const token = generateToken(newUser._id);
+    const token = generateToken(newUser);
     res.status(201).json({ message: "User registered successfuly", data: { user: newUser, token } });
   } catch (error) {
     next(error);
@@ -38,7 +38,7 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = generateToken(foundUser._id);
+    const token = generateToken(foundUser);
     res.json({ message: "Login successful", data: { user: foundUser, token } });
   } catch (error) {
     next(error);

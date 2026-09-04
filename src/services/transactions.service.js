@@ -3,7 +3,8 @@ const Account = require('../models/account.model');
 const nibssAccountApi = require("../integrations/nibss/account.api");
 const nibssTransactionApi = require("../integrations/nibss/transaction.api");
 
-const generateReferenceNumber = () => {
+
+const generateReference = () => {
   return `TXN-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
 };
 
@@ -32,7 +33,7 @@ exports.transfer = async ({
 
   //2. Call NIBSS transfer
   const result = 
-    await nibssAccountApi.transfer({
+    await nibssTransactionApi.transfer({
       from: sourceAccount,
       to: destinationAccount,
       amount: String(amount)

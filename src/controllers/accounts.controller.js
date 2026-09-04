@@ -12,7 +12,7 @@ exports.createAccount = async (req, res, next) => {
 exports.getAccountById = async (req, res, next) => {
   try {
     const account = await accountsService.getAccountById(req.params.accountNumber);
-    res.status(201).json({ success: true,  message: "Account retrieved", data: account });
+    res.status(200).json({ success: true,  message: "Account retrieved", data: account });
   } catch (error) {
     next(error)
   }
@@ -21,7 +21,7 @@ exports.getAccountById = async (req, res, next) => {
 exports.getCustomerAccounts = async (req, res, next) => {
   try {
     const accounts = await accountsService.getCustomerAccounts(req.params.customerId);
-    res.status(201).json({ success: true,  message: "Customer details retrieved", data: accounts });
+    res.status(200).json({ success: true,  message: "Customer details retrieved", data: accounts });
   } catch (error) {
     next(error)
   }
@@ -30,7 +30,7 @@ exports.getCustomerAccounts = async (req, res, next) => {
 exports.getBalance = async (req, res, next) => {
   try {
     const balance = await accountsService.getBalance(req.params.accountNumber);
-    res.status(201).json({ success: true,  message: "Customer details retrieved", data: balance });
+    res.status(200).json({ success: true,  message: "Customer details retrieved", data: balance });
   } catch (error) {
     next(error)
   }
@@ -39,7 +39,7 @@ exports.getBalance = async (req, res, next) => {
 exports.nameEnquiry = async (req, res, next) => {
   try {
     const result = await accountsService.nameEnquiry(req.params.accountNumber);
-    res.status(201).json({ success: true,  message: "Name details retrieved", data: result });
+    res.status(200).json({ success: true,  message: "Name details retrieved", data: result });
   } catch (error) {
     next(error)
   }
@@ -49,7 +49,7 @@ exports.nameEnquiry = async (req, res, next) => {
 exports.getAllAccounts = async (req, res, next) => {
   try {
     const accounts = await accountsService.getAllAccounts();
-    res.status(201).json({ success: true,  message: "Customer details retrieved", data: accounts });
+    res.status(200).json({ success: true,  message: "Customer details retrieved", data: accounts });
   } catch (error) {
     next(error)
   }

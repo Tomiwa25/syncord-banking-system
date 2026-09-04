@@ -33,8 +33,8 @@ const customerSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
-    dateOfBirth: { 
-      type: String, 
+    dateOfBirth: {
+      type: Date,
       required: true 
     },
     status: {

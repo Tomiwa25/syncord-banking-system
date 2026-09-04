@@ -1,13 +1,24 @@
 const jwt = require('jsonwebtoken');
 const env = require('../config/env');
 
+const authorizeRoles = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: "You do not have permission to perform this action",
+    });
+  }
+
+  next();
+};
+
 exports.authenticate = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
     if(!authHeader) {
       return res.status(401).json({
-        success: true,
+        success: false,
         message: "Authentication required"
       })
     }
@@ -32,3 +43,5 @@ exports.authenticate = (req, res, next) => {
       });
   }
 };
+
+exports.authorizeRoles = authorizeRoles;

@@ -1,8 +1,10 @@
 const axios = require("axios");
 const env = require("../../config/env");
 
+console.log("NIBSS BASE URL:", env.nibss.baseUrl);
+
 const nibssClient = axios.create({
-    baseURL: env.NIBSS_API_BASE_URL,
+    baseURL: env.nibss.baseUrl,
     timeout: 15000,
     headers: {
         "Content-Type": "application/json",
