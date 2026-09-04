@@ -35,3 +35,5 @@ exports.updateCustomerById = async (req, res, next) => {
     next(error)
   }
 };
+
+exports.updateCustomer = exports.updateCustomerById;

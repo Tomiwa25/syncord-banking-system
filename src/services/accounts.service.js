@@ -1,5 +1,5 @@
-const Account = require("../models/Account");
-const Customer = require("../models/Customer");
+const Account = require("../models/account.model");
+const Customer = require("../models/customer.model");
 const nibssIdentityApi = require("../integrations/nibss/identity.api");
 const nibssAccountApi = require("../integrations/nibss/account.api");
 
@@ -82,13 +82,13 @@ const getBalance = async (accountNumber) => {
   return nibssAccountApi.getBalance(accountNumber);
 };
 
-const nameEnquiry = async => {
+const nameEnquiry = async (accountNumber) => {
   return nibssAccountApi.nameEnquiry(accountNumber);
 };
 
-const getAllAccounts = async => {
+const getAllAccounts = async () => {
   return nibssAccountApi.getAllAccounts();
-}
+};
 
 module.exports = {
   createAccount,

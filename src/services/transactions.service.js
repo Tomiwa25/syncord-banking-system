@@ -1,79 +1,10 @@
 const Transaction = require('../models/transaction.model');
 const Account = require('../models/account.model');
+const nibssAccountApi = require("../integrations/nibss/account.api");
+const nibssTransactionApi = require("../integrations/nibss/transaction.api");
 
 const generateReferenceNumber = () => {
   return `TXN-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-};
-
-exports.deposit = async ({
-  accountNumber,
-  amount,
-  narration,
-}) => {
- if (amount <= 0) {
-    throw new Error('Amount must be greater than zero');
-}
-
-  const account = await Account.findOne({
-    accountNumber,
-  })
-  if (!account) {
-    throw new Error('Account is not found');
-}
-
-  if (account.status !== "ACTIVE") {
-    throw new Error('Account is not active');
-}
-
- account.balance += amount;
-
- await account.save();
-
- return Transaction.create({
-  reference: generateReferenceNumber(),
-  type: "DEPOSIT",
-  destinationAccount: accountNumber,
-  amount,
-  narration,
-  status: "SUCCESS"
-});
-};
-
-exports.withdraw = async ({
-  accountNumber,
-  amount,
-  narration,
-}) => {
- if (amount <= 0) {
-    throw new Error('Amount must be greater than zero');
- }
-
- const account = await Account.findOne({
-    accountNumber,
- })
- if (!account) {
-    throw new Error('Account is not found');
-}
-
-  if (account.status !== "ACTIVE") {
-    throw new Error('Account is not active');
-}
-
-if (account.balance < amount) {
-  throw new Error("Insufficient balance")
-}
- account.balance -= amount;
-
- await account.save();
-
- return Transaction.create({
-  reference: generateReferenceNumber(),
-  type: "WITHDRAWAL",
-  destinationAccount: accountNumber,
-  amount,
-  narration,
-  status: "SUCCESS"
-});
 };
 
 exports.transfer = async ({
@@ -85,40 +16,54 @@ exports.transfer = async ({
  if (amount <= 0) {
     throw new Error('Amount must be greater than zero');
  }
- const source = await Account.findOne({
+ const sender = await Account.findOne({
     accountNumber: sourceAccount,
  });
 
- const destination = await Account.findOne({
-    accountNumber: destinationAccount,
- });
-
- if (!source || !destination) {
+ if (!sender) {
     throw new Error('Account is not found');
 } 
-  if (source.status !== "ACTIVE" || destination.status !== "ACTIVE") {
+  if (sender.status !== "ACTIVE") {
     throw new Error('Account is not active');
 }
-  if (source.balance < amount) {
-  throw new Error("Insufficient balance")
-}
-  source.balance -= amount;
-  destination.balance += amount;
+  //1. Check recipient name
+  const recipient = 
+    await nibssAccountApi.nameEnquiry(destinationAccount);
 
- await source.save();
- await destination.save();
-
- return Transaction.create({
-  reference: generateReferenceNumber(),
-  type: "TRANSFER",
-  sourceAccount,
-  destinationAccount,
-  amount,
-  narration,
-  status: "SUCCESS"
+  //2. Call NIBSS transfer
+  const result = 
+    await nibssAccountApi.transfer({
+      from: sourceAccount,
+      to: destinationAccount,
+      amount: String(amount)
+    })
+    //3. Save transaction locally
+  const transaction =
+    await Transaction.create({
+      reference: generateReference(),
+      externalTransactionId: result.transactionId,
+      type: "TRANSFER",
+      sourceAccount,
+      destinationAccount,
+      amount: result.amount,
+      narration,
+      status: 
+        result.status === "SUCCESS" ? "SUCCESS" : "PROCESSING",
  });
+ return {
+  transaction,
+  recipient
+ }
 };
 
-exports.getTransactions = async (filters) => {
-  return Transaction.find(filters).sort({ createdAt: -1 });
+exports.getTransaction = async (transactionId) => {
+  const result = 
+    await nibssTransactionApi.getTransaction(transactionId);
+  return result;
+};
+
+exports.getTransactions = async (filters) => { 
+  return (await Transaction.find(filters)).sort({
+      createdAt: -1
+  });
 };

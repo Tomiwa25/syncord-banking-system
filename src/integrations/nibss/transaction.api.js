@@ -1,20 +1,21 @@
 const nibssClient = require("./client");
+const { getToken } = require("./token.service");
 
-const transfer = async (data, token) => {
-    const token = await getToken(); // Get the token from the token service
+const transfer = async (data) => {
+    const authToken = await getToken();
     const response = await nibssClient.post("/api/transfer", data, {
         headers: {
-            "Authorization": `Bearer ${token}`
+            "Authorization": `Bearer ${authToken}`
         },
     });
     return response.data;
 };
 
-const getTransaction = async (transactionId, token) => {
-    const token = await getToken(); // Get the token from the token service
+const getTransaction = async (transactionId) => {
+    const authToken = await getToken();
     const response = await nibssClient.get(`/api/transaction/${transactionId}`, {
         headers: {
-            "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${authToken}`,
         },
     });
     return response.data;

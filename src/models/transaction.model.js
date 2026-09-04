@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema(
   {
-    sourceAccountId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Account',
-      required: true,
+    reference: { 
+      type: String, 
+      required: true, 
+      unique: true 
     },
     externalTransactionId: {
       type: String,
@@ -14,37 +14,30 @@ const transactionSchema = new mongoose.Schema(
     sourceAccount: { 
       type: String, 
     },
-    destinationAccountNumber: { 
-      type: String, 
-    },
     type: { 
       type: String, 
       required: true,
       enum: [
-        "DEPOSIT",
-        "WITHDRAWAL",
         "TRANSFER"
       ] 
     },
-    destinationAccountName: {
-       type: String 
+    destinationAccount: { 
+      type: String,
+      required: true 
     },
     amount: {
       type: Number,
       required: true,
       min: 0,
     },
+    currency: {
+      type: String,
+      default: "NGN"
+    },
     narration: {
       type: String,
       trim: true
     },
-    
-    reference: { 
-      type: String, 
-      required: true, 
-      unique: true 
-    },
-    nibssSessionId: { type: String },
     status: {
       type: String,
       enum: [

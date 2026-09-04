@@ -1,41 +1,41 @@
 const nibssClient = require("./client");
+const { getToken } = require("./token.service");
 
-const createAccount = async (data, token) => {
-
-    const token = await getToken(); // Get the token from the token service
+const createAccount = async (data) => {
+    const authToken = await getToken();
     const response = await nibssClient.post("/api/createAccount", data, {
         headers: {
-            "Authorization": `Bearer ${token}`
+            "Authorization": `Bearer ${authToken}`
         },
     });
     return response.data;
 };
 
-const nameEnquiry = async (accountNumber, token) => {
-    const token = await getToken(); // Get the token from the token service
-    const response = await nibssClient.post(`/api/account/name-enquiry/${accountNumber}`, {
-           headers: {
-            "Authorization": `Bearer ${token}`
+const nameEnquiry = async (accountNumber) => {
+    const authToken = await getToken();
+    const response = await nibssClient.post(`/api/account/name-enquiry/${accountNumber}`, {}, {
+        headers: {
+            "Authorization": `Bearer ${authToken}`
         },
     });
     return response.data;
 };
 
-const getAccounts = async (token) => {
-    const token = await getToken(); // Get the token from the token service
+const getAccounts = async () => {
+    const authToken = await getToken();
     const response = await nibssClient.get("/api/accounts", {
         headers: {
-            "Authorization": `Bearer ${token}`
+            "Authorization": `Bearer ${authToken}`
         },
     });
     return response.data;
 };
 
-const getBalance = async (accountNumber, token) => {
-    const token = await getToken(); // Get the token from the token service
+const getBalance = async (accountNumber) => {
+    const authToken = await getToken();
     const response = await nibssClient.get(`/api/account/balance/${accountNumber}`, {
         headers: {
-            "Authorization": `Bearer ${token}`
+            "Authorization": `Bearer ${authToken}`
         },
     });
     return response.data;
